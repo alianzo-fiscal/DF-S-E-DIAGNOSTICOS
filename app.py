@@ -22,6 +22,7 @@ import pandas as pd
 
 import pipeline as p
 import docx_report
+import pptx_report
 
 st.set_page_config(page_title="Diagnóstico Financeiro Consolidado", layout="wide")
 
@@ -171,7 +172,7 @@ with st.expander("Ver Balanço, DRE e DFC completos"):
     render_statement(tab3, statements["dfc_rows"], statements["dfc"])
 
 st.subheader("2. Baixe os entregáveis")
-col_a, col_b = st.columns(2)
+col_a, col_b, col_c = st.columns(3)
 
 safe_name = "".join(c if c.isalnum() or c in " -_" else "" for c in group_name).strip().replace(" ", "_") or "Empresa"
 
@@ -198,6 +199,18 @@ with col_b:
         st.download_button("⬇️ Baixar Word", st.session_state["docx_bytes"],
                             file_name=f"Diagnostico_Financeiro_{safe_name}.docx",
                             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+with col_c:
+    if st.button("Gerar apresentação PPT (diagnóstico)"):
+        with st.spinner("Gerando PPT…"):
+            out_path = os.path.join(tempfile.mkdtemp(), "diagnostico.pptx")
+            pptx_report.build_presentation(statements, indicators, out_path, group_name=group_name)
+            with open(out_path, "rb") as f:
+                st.session_state["pptx_bytes"] = f.read()
+    if "pptx_bytes" in st.session_state:
+        st.download_button("⬇️ Baixar PPT", st.session_state["pptx_bytes"],
+                            file_name=f"Diagnostico_Financeiro_{safe_name}.pptx",
+                            mime="application/vnd.openxmlformats-officedocument.presentationml.presentation")
 
 st.divider()
 st.caption(
